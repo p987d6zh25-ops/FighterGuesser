@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FighterGuesser</title>
+<style>
+:root{--bg:#09090a;--panel:#18181b;--panel2:#202024;--text:#f6f6f7;--muted:#9b9ba1;--red:#ed1c24;--green:#176b42;--yellow:#735112;--black:#0b0b0c;--line:#3a3a40}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:linear-gradient(#111 0,#09090a 45%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+body{padding-bottom:env(safe-area-inset-bottom)}
+header{height:72px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:#1b1b1d;border-bottom:1px solid #29292d}
+.logo{font-weight:950;font-style:italic;font-size:23px;letter-spacing:.3px}.logo span{color:var(--red)}
+button{font:inherit;border:0;touch-action:manipulation}
+.topbtn,.ghost{background:#2a2a2e;color:#fff;border:1px solid #45454b;border-radius:12px;padding:10px 12px;font-weight:750}
+main{max-width:760px;margin:auto;padding:24px 14px 70px}
+h1{font-size:46px;line-height:.96;letter-spacing:-2px;margin:0 0 6px}.sub{color:#b9b9bf;margin-bottom:22px}
+.status{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#2b1012;border:1px solid #772329;border-radius:16px;padding:16px;margin-bottom:18px}
+.status strong{font-size:20px}.status small{display:block;color:#c9a9aa;margin-top:4px}
+.search-wrap{position:relative;margin-bottom:10px}
+#fighterInput{width:100%;height:54px;border-radius:13px;border:1px solid #414148;background:#1d1d20;color:#fff;font-size:17px;padding:0 14px;outline:none;-webkit-appearance:none;appearance:none}
+#fighterInput:focus{border-color:#b52d34;box-shadow:0 0 0 3px rgba(181,45,52,.18)}
+#suggestions{display:none;position:relative;width:100%;margin-top:6px;z-index:10;background:#202024;border:1px solid #46464d;border-radius:13px;max-height:310px;overflow:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+#suggestions.show{display:block}
+.srow{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:50px;padding:12px 14px;background:#202024;color:#fff;border:0;border-bottom:1px solid #323238;text-align:left;border-radius:0;font-size:16px}
+.srow:last-child{border-bottom:0}.srow:active{background:#323238}.srow b{font-size:16px}.srow small{color:#9a9aa0;white-space:nowrap;margin-left:10px}
+#guessBtn{width:100%;height:52px;background:var(--red);color:#fff;border-radius:13px;font-size:17px;font-weight:850;margin-bottom:14px}
+#guessBtn:disabled{opacity:.5}
+#msg{display:none;background:#311416;color:#ffb8bb;border:1px solid #7c2d31;padding:10px 12px;border-radius:10px;margin:-5px 0 14px;font-weight:700}
+.legend,.tiles{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.legend{color:#a0a0a6;font-size:10px;font-weight:800;letter-spacing:.6px;text-align:center;margin:6px 0 8px}
+.card{background:#18181b;border:1px solid #3c3c40;border-radius:15px;padding:13px;margin:10px 0}
+.fname{font-weight:900;font-size:19px;margin-bottom:11px}
+.tile{min-height:70px;border-radius:10px;border:1px solid #303035;background:var(--black);display:flex;align-items:center;justify-content:center;text-align:center;padding:5px;font-size:11px;font-weight:850;line-height:1.2;overflow-wrap:anywhere}
+.tile.good{background:var(--green);border-color:#268a59}.tile.close{background:var(--yellow);border-color:#a5751c}.arr{font-size:15px;margin-left:3px}
+.actions{display:flex;gap:10px;margin-top:16px}.actions button{min-height:44px;flex:1}
+.note{font-size:12px;line-height:1.45;color:#8f8f96;margin-top:16px}
+#shareBtn{display:none;background:var(--red);color:#fff;border-radius:11px;padding:10px 13px;font-weight:800}
+@media(max-width:430px){h1{font-size:41px}.tile{font-size:9px;min-height:64px;padding:4px 2px}.legend{font-size:7.5px;letter-spacing:.2px}.card{padding:10px}.fname{font-size:18px}.arr{font-size:12px;margin-left:2px}}
+</style>
+</head>
+<body>
+<header><div class="logo"><span>FIGHTER</span>GUESSER</div><button class="topbtn" id="randomBtn" type="button">Random</button></header>
+<main>
+<h1>FighterGuesser</h1>
+<div class="sub">Guess the men's UFC fighter • unlimited guesses</div>
+
+<div class="status">
+  <div><strong id="statusTitle">0 guesses made</strong><small id="statusText">Unlimited guesses. Use the clues to narrow down the fighter.</small></div>
+  <button id="shareBtn" type="button">Share</button>
+</div>
+
+<div class="search-wrap" id="searchWrap">
+  <input id="fighterInput" type="search" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" placeholder="Start typing a fighter name…">
+  <div id="suggestions" role="listbox" aria-label="Fighter suggestions"></div>
+</div>
+<button id="guessBtn" type="button">Guess</button>
+<div id="msg" role="status" aria-live="polite"></div>
+
+<div class="legend"><div>DIV</div><div>COUNTRY</div><div>RANK</div><div>AGE</div><div>HT</div><div>KO/TKO</div><div>SUB</div></div>
+<div id="board"></div>
+
+<div class="actions">
+  <button class="ghost" id="revealBtn" type="button">Reveal Answer</button>
+  <button class="ghost" id="resetBtn" type="button">Restart Today</button>
+</div>
+<div class="note">Green = exact. Yellow = within 2 for rank, age, height, KO/TKO wins, or submission wins. Black = wrong. Arrows point toward the correct answer. KO/TKO and SUB are UFC wins by those methods in the built-in dataset. Your guess count is tracked with no guess limit.</div>
+</main>
+
+<script>
+(function(){
+'use strict';
+
+const fighters = [
+  ["Alex Pereira","LHW","Brazil",1,"1987-07-07",76,8,0],
+  ["Alexander Volkanovski","FW","Australia",1,"1988-09-29",66,5,0],
+  ["Alexander Volkov","HW","Russia",3,"1988-10-24",79,6,1],
+  ["Alexandre Pantoja","FLW","Brazil",1,"1990-04-16",65,2,6],
+  ["Aljamain Sterling","FW","United States",11,"1989-07-31",67,2,4],
+  ["Arman Tsarukyan","LW","Armenia",2,"1996-10-11",67,5,1],
+  ["Arnold Allen","FW","England",5,"1994-01-22",68,2,2],
+  ["Belal Muhammad","WW","United States",6,"1988-07-09",71,2,1],
+  ["Benoit Saint Denis","LW","France",9,"1995-12-18",71,5,4],
+  ["Brandon Moreno","FLW","Mexico",2,"1993-12-07",67,3,3],
+  ["Brandon Royval","FLW","United States",3,"1992-08-16",69,1,4],
+  ["Brian Ortega","FW","United States",6,"1991-02-21",68,3,4],
+  ["Charles Oliveira","LW","Brazil",3,"1989-10-17",70,4,17],
+  ["Ciryl Gane","HW","France",2,"1990-04-12",77,5,2],
+  ["Cory Sandhagen","BW","United States",4,"1992-04-20",71,6,1],
+  ["Curtis Blaydes","HW","United States",5,"1991-02-18",76,8,0],
+  ["Dan Ige","FW","United States",8,"1991-08-06",67,5,1],
+  ["Deiveson Figueiredo","BW","Brazil",5,"1987-12-18",65,4,4],
+  ["Dricus Du Plessis","MW","South Africa",1,"1994-01-14",73,4,2],
+  ["Dustin Poirier","LW","United States",5,"1989-01-19",69,11,4],
+  ["Ian Machado Garry","WW","Ireland",2,"1997-11-17",75,3,0],
+  ["Islam Makhachev","LW","Russia",1,"1991-10-27",70,3,8],
+  ["Israel Adesanya","MW","New Zealand",4,"1989-07-22",76,5,0],
+  ["Jack Della Maddalena","WW","Australia",1,"1996-09-10",71,4,1],
+  ["Jamahal Hill","LHW","United States",4,"1991-05-19",76,4,0],
+  ["Jean Silva","FW","Brazil",9,"1996-12-13",67,4,2],
+  ["Jiri Prochazka","LHW","Czech Republic",3,"1992-10-14",75,5,1],
+  ["Josh Emmett","FW","United States",7,"1985-03-04",66,4,0],
+  ["Justin Gaethje","LW","United States",4,"1988-11-14",71,7,0],
+  ["Kai Kara-France","FLW","New Zealand",5,"1993-03-26",64,3,0],
+  ["Kamaru Usman","WW","Nigeria",7,"1987-05-11",72,4,1],
+  ["Khamzat Chimaev","MW","United Arab Emirates",2,"1994-05-01",74,2,4],
+  ["Leon Edwards","WW","England",5,"1991-08-25",72,3,1],
+  ["Lerone Murphy","FW","England",10,"1991-07-22",69,3,0],
+  ["Magomed Ankalaev","LHW","Russia",2,"1992-06-02",75,7,0],
+  ["Mateusz Gamrot","LW","Poland",8,"1990-12-11",70,3,2],
+  ["Max Holloway","FW","United States",2,"1991-12-04",71,12,2],
+  ["Melquizael Costa","FW","Brazil",12,"1996-09-14",70,2,2],
+  ["Merab Dvalishvili","BW","Georgia",2,"1991-01-10",66,1,1],
+  ["Michael Morales","WW","Ecuador",8,"1999-06-24",72,5,0],
+  ["Movsar Evloev","FW","Russia",3,"1994-02-11",67,0,0],
+  ["Paddy Pimblett","LW","England",7,"1995-01-03",70,2,4],
+  ["Petr Yan","BW","Russia",3,"1993-02-11",67,4,0],
+  ["Quillan Salkilld","LW","Australia",6,"1999-03-12",72,3,2],
+  ["Renato Moicano","LW","Brazil",10,"1989-05-21",71,2,7],
+  ["Robert Whittaker","MW","Australia",5,"1990-12-20",72,7,0],
+  ["Sean Brady","WW","United States",4,"1992-11-23",70,0,4],
+  ["Sean O'Malley","BW","United States",1,"1994-10-24",71,7,0],
+  ["Sean Strickland","MW","United States",3,"1991-02-27",73,5,1],
+  ["Sergei Pavlovich","HW","Russia",4,"1992-05-13",75,7,0],
+  ["Shavkat Rakhmonov","WW","Kazakhstan",3,"1994-10-23",73,1,5],
+  ["Tatsuro Taira","FLW","Japan",4,"2000-01-27",67,3,3],
+  ["Tom Aspinall","HW","England",1,"1993-04-11",77,6,2],
+  ["Yair Rodriguez","FW","Mexico",4,"1992-10-06",71,4,1]
+].map(x => ({name:x[0],div:x[1],country:x[2],rank:x[3],dob:x[4],height:x[5],ko:x[6],sub:x[7]}));
+
+const divOrder=["FLW","BW","FW","LW","WW","MW","LHW","HW"];
+const input=document.getElementById('fighterInput');
+const suggestions=document.getElementById('suggestions');
+const guessBtn=document.getElementById('guessBtn');
+const board=document.getElementById('board');
+const msg=document.getElementById('msg');
+const statusTitle=document.getElementById('statusTitle');
+const statusText=document.getElementById('statusText');
+const shareBtn=document.getElementById('shareBtn');
+
+let guesses=[];
+let target=null;
+let gameOver=false;
+let mode='daily';
+
+function ageFromDob(dob){
+  const b=new Date(dob+'T00:00:00');
+  const n=new Date();
+  let a=n.getFullYear()-b.getFullYear();
+  const m=n.getMonth()-b.getMonth();
+  if(m<0 || (m===0 && n.getDate()<b.getDate())) a--;
+  return a;
+}
+function dailyIndex(){
+  const d=new Date();
+  const s=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  let h=2166136261;
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}
+  return Math.abs(h)%fighters.length;
+}
+function heightText(n){return Math.floor(n/12)+"'"+(n%12)+'"';}
+function arrow(a,b){return a===b?'':(b>a?'↑':'↓');}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function isGuessed(name){return guesses.some(g=>g.name===name);}
+
+function findMatches(raw){
+  const q=raw.trim().toLowerCase();
+  if(!q) return [];
+  return fighters
+    .filter(f=>!isGuessed(f.name))
+    .map(f=>{
+      const name=f.name.toLowerCase();
+      const words=name.split(/\s+/);
+      let score=99;
+      if(name.startsWith(q)) score=0;
+      else if(words.some(w=>w.startsWith(q))) score=1;
+      else if(name.includes(q)) score=2;
+      return {f,score};
+    })
+    .filter(x=>x.score<99)
+    .sort((a,b)=>a.score-b.score || a.f.name.localeCompare(b.f.name))
+    .slice(0,8)
+    .map(x=>x.f);
+}
+function closeSuggestions(){suggestions.classList.remove('show');suggestions.innerHTML='';}
+function updateSuggestions(){
+  if(gameOver){closeSuggestions();return;}
+  const q=input.value.trim();
+  if(!q){closeSuggestions();return;}
+  const rows=findMatches(q);
+  suggestions.innerHTML = rows.length ? rows.map(f=>
+    '<button type="button" class="srow" role="option" data-name="'+escapeHtml(f.name)+'"><b>'+escapeHtml(f.name)+'</b><small>'+escapeHtml(f.div)+' • #'+f.rank+'</small></button>'
+  ).join('') : '<div class="srow"><b>No matching fighter</b></div>';
+  suggestions.classList.add('show');
+}
+function chooseSuggestion(name){
+  input.value=name;
+  closeSuggestions();
+  hideMessage();
+}
+
+function showMessage(t){msg.textContent=t;msg.style.display='block';}
+function hideMessage(){msg.textContent='';msg.style.display='none';}
+
+function tile(value,exact,close,arr){
+  const cls=exact?'good':(close?'close':'');
+  return '<div class="tile '+cls+'">'+escapeHtml(value)+(arr?'<span class="arr">'+arr+'</span>':'')+'</div>';
+}
+function renderGuess(f){
+  const targetAge=ageFromDob(target.dob), guessAge=ageFromDob(f.dob);
+  const rankDiff=Math.abs(f.rank-target.rank);
+  const ageDiff=Math.abs(guessAge-targetAge);
+  const heightDiff=Math.abs(f.height-target.height);
+  const koDiff=Math.abs(f.ko-target.ko);
+  const subDiff=Math.abs(f.sub-target.sub);
+  const fDiv=divOrder.indexOf(f.div), tDiv=divOrder.indexOf(target.div);
+  return '<div class="card"><div class="fname">'+escapeHtml(f.name)+'</div><div class="tiles">'+
+    tile(f.div,f.div===target.div,false,arrow(fDiv,tDiv))+
+    tile(f.country,f.country===target.country,false,'')+
+    tile('#'+f.rank,rankDiff===0,rankDiff>0&&rankDiff<=2,arrow(f.rank,target.rank))+
+    tile(String(guessAge),ageDiff===0,ageDiff>0&&ageDiff<=2,arrow(guessAge,targetAge))+
+    tile(heightText(f.height),heightDiff===0,heightDiff>0&&heightDiff<=2,arrow(f.height,target.height))+
+    tile(String(f.ko),koDiff===0,koDiff>0&&koDiff<=2,arrow(f.ko,target.ko))+
+    tile(String(f.sub),subDiff===0,subDiff>0&&subDiff<=2,arrow(f.sub,target.sub))+
+    '</div></div>';
+}
+function render(){
+  board.innerHTML=guesses.map(renderGuess).join('');
+  const count=guesses.length;
+  if(gameOver){
+    const won=count && guesses[count-1].name===target.name;
+    statusTitle.textContent=won?'Correct: '+target.name:'Answer: '+target.name;
+    statusText.textContent=won
+      ? ('Solved in '+count+(count===1?' guess.':' guesses.'))
+      : ('Revealed after '+count+(count===1?' guess.':' guesses.'));
+    shareBtn.style.display='block';
+  }else{
+    statusTitle.textContent=count+' '+(count===1?'guess':'guesses')+' made';
+    statusText.textContent='Unlimited guesses. Use the clues to narrow down the fighter.';
+    shareBtn.style.display='none';
+  }
+  input.disabled=gameOver;
+  guessBtn.disabled=gameOver;
+}
+function submitGuess(){
+  if(gameOver) return;
+  hideMessage();
+  const typed=input.value.trim();
+  if(!typed){showMessage("Start typing a fighter's name.");input.focus();return;}
+
+  let fighter=fighters.find(f=>f.name.toLowerCase()===typed.toLowerCase());
+  if(fighter && isGuessed(fighter.name)){showMessage('You already guessed that fighter.');return;}
+  if(!fighter){
+    const matches=findMatches(typed);
+    if(matches.length===1) fighter=matches[0];
+    else {showMessage('Choose a fighter from the dropdown.');updateSuggestions();return;}
+  }
+
+  guesses.push(fighter);
+  input.value='';
+  closeSuggestions();
+  if(fighter.name===target.name) gameOver=true;
+  render();
+}
+function startDaily(){mode='daily';target=fighters[dailyIndex()];guesses=[];gameOver=false;input.value='';closeSuggestions();hideMessage();render();}
+function startRandom(){mode='random';target=fighters[Math.floor(Math.random()*fighters.length)];guesses=[];gameOver=false;input.value='';closeSuggestions();hideMessage();render();}
+function reveal(){gameOver=true;closeSuggestions();hideMessage();render();}
+function shareGrid(){
+  const lines=guesses.map(f=>{
+    const ta=ageFromDob(target.dob),ga=ageFromDob(f.dob);
+    const vals=[
+      f.div===target.div?2:0,
+      f.country===target.country?2:0,
+      f.rank===target.rank?2:(Math.abs(f.rank-target.rank)<=2?1:0),
+      ga===ta?2:(Math.abs(ga-ta)<=2?1:0),
+      f.height===target.height?2:(Math.abs(f.height-target.height)<=2?1:0),
+      f.ko===target.ko?2:(Math.abs(f.ko-target.ko)<=2?1:0),
+      f.sub===target.sub?2:(Math.abs(f.sub-target.sub)<=2?1:0)
+    ];
+    return vals.map(v=>v===2?'🟩':v===1?'🟨':'⬛').join('');
+  });
+  const txt='FighterGuesser '+(mode==='daily'?'Daily':'Random')+' • '+guesses.length+' '+(guesses.length===1?'guess':'guesses')+'\n'+lines.join('\n');
+  if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(txt).catch(()=>{});}
+}
+
+input.addEventListener('input',()=>{hideMessage();updateSuggestions();});
+input.addEventListener('focus',updateSuggestions);
+input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitGuess();}else if(e.key==='Escape'){closeSuggestions();}});
+suggestions.addEventListener('click',e=>{const row=e.target.closest('.srow[data-name]');if(row) chooseSuggestion(row.dataset.name);});
+guessBtn.addEventListener('click',e=>{e.stopPropagation();submitGuess();});
+document.getElementById('randomBtn').addEventListener('click',startRandom);
+document.getElementById('resetBtn').addEventListener('click',startDaily);
+document.getElementById('revealBtn').addEventListener('click',reveal);
+shareBtn.addEventListener('click',shareGrid);
+document.addEventListener('click',e=>{if(!e.target.closest('#searchWrap')) closeSuggestions();});
+
+startDaily();
+})();
+</script>
+</body>
+</html>
